@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "717044509110",
+    "firebase_url": "https://smartpill-17b1f.firebaseio.com",
+    "project_id": "smartpill-17b1f",
+    "storage_bucket": "smartpill-17b1f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:717044509110:android:85d31cc876a84bd973b917",
+        "android_client_info": {
+          "package_name": "halla.icsw.smartpill"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "717044509110-43l8gm4dpm00grrsun5iek46rstr1acr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwwsr3jxsII7PgoqEUSn8SR1zpqlf7YEg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "717044509110-43l8gm4dpm00grrsun5iek46rstr1acr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
