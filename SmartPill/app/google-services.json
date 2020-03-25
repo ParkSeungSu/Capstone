@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "717044509110-9runql2upho45lbq3n9jgn62cls31svi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "halla.icsw.smartpill",
+            "certificate_hash": "e0041a503d66fea18fcb5275165882364ecfc970"
+          }
+        },
+        {
           "client_id": "717044509110-43l8gm4dpm00grrsun5iek46rstr1acr.apps.googleusercontent.com",
           "client_type": 3
         }

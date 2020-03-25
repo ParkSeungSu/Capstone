@@ -4,131 +4,23 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_horizontal"
     android:orientation="vertical"
     tools:context=".MainActivity">
 
+    <Button
+        android:id="@+id/logout_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Logout" />
+
     <TextView
+        android:id="@+id/username_textview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <ImageView
+        android:id="@+id/photo_imageview"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello I'm SmartPill!"
-        android:textSize="30dp"
-        android:textStyle="bold"
-        android:layout_marginTop="50dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <androidx.cardview.widget.CardView
-        android:layout_width="300dp"
-        android:layout_height="200dp"
-        android:hapticFeedbackEnabled="false"
-        app:cardBackgroundColor="#FFFFFF"
-        app:cardCornerRadius="100dp"
-        app:cardElevation="10dp">
-
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="300dp"
-            android:layout_height="200dp"
-            android:adjustViewBounds="true"
-            android:background="#C5A4A4"
-            android:backgroundTint="#FFFFFF"
-            android:elevation="10dp"
-            app:srcCompat="@drawable/pills" />
-    </androidx.cardview.widget.CardView>
-
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="10dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginRight="10dp"
-        android:background="#CCCCCC"
-        app:cardBackgroundColor="#3E737373"
-        app:cardCornerRadius="20dp"
-        app:contentPadding="10dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ID :"
-                android:textSize="30sp" />
-
-            <EditText
-                android:id="@+id/idEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-
-    </androidx.cardview.widget.CardView>
-
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="10dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginRight="10dp"
-        android:background="#CCCCCC"
-        app:cardBackgroundColor="#3E737373"
-        app:cardCornerRadius="20dp"
-        app:contentPadding="10dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Password :"
-                android:textSize="30sp" />
-
-            <EditText
-                android:id="@+id/passEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-
-    </androidx.cardview.widget.CardView>
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="83dp"
-            android:padding="15dp"
-            app:layout_constraintBottom_toBottomOf="parent">
-
-            <Button
-                android:id="@+id/login"
-                android:layout_width="50dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Button" />
-
-            <Space
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1" />
-
-            <Button
-                android:id="@+id/button2"
-                android:layout_width="50dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Button" />
-        </LinearLayout>
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        android:layout_height="wrap_content" />
 
 </LinearLayout>
