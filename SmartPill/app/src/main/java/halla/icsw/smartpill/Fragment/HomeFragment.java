@@ -36,6 +36,7 @@ public class HomeFragment extends Fragment {
     private Button commitButton;
     private CircleProgressBar progressBar;
     private static final String DEFAULT_PATTERN = "%d%%";
+    private boolean commitSign=false;
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Nullable
     @Override
@@ -66,15 +67,21 @@ public class HomeFragment extends Fragment {
         commitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if((progressBar.getProgress()+30)<100){
-                    progressBar.setProgress(progressBar.getProgress()+30);
-//                  mainActivity.connectPill();
-                }else{
-                    progressBar.setProgress(100);
+                mainActivity.setup();
+                if (commitSign) {
+                    if ((progressBar.getProgress() + 30) < 90) {
+                        progressBar.setProgress(progressBar.getProgress() + 30);
+                    } else {
+                        progressBar.setProgress(100);
+                    }
+                    commitSign=false;
                 }
             }
         });
         return view;
+    }
+    public void setBoolean(){
+        commitSign=true;
     }
 
 

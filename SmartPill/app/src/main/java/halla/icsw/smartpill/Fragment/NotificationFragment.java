@@ -18,6 +18,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,8 +54,13 @@ public class NotificationFragment extends Fragment {
                 if(pName.length()>0){
                     int hour= pillTime.getHour();
                     int min=pillTime.getMinute();
+                    Calendar alarmCalendar = Calendar.getInstance();
+                    alarmCalendar.setTimeInMillis(System.currentTimeMillis());
+                    alarmCalendar.set(Calendar.HOUR_OF_DAY, pillTime.getHour());
+                    alarmCalendar.set(Calendar.MINUTE, pillTime.getMinute());
+                    alarmCalendar.set(Calendar.SECOND, 0);
                     String user= FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    UserAlarm userAlarm=new UserAlarm(user,pName,hour+":"+min);
+                    UserAlarm userAlarm=new UserAlarm(user,pName,hour+":"+min, alarmCalendar.getTimeInMillis());
                     userData=userAlarm.toMap();
                     childUpdates.put("/userData/"+user+pName,userData);
                     mDataRef.updateChildren(childUpdates);

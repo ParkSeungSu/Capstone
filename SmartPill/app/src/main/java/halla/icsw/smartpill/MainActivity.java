@@ -1,10 +1,16 @@
 package halla.icsw.smartpill;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
 
+import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -14,8 +20,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
@@ -41,6 +45,8 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 
 import app.akexorcist.bluetotohspp.library.BluetoothSPP;
+import app.akexorcist.bluetotohspp.library.BluetoothState;
+import app.akexorcist.bluetotohspp.library.DeviceList;
 import halla.icsw.smartpill.Fragment.DashboardFragment;
 import halla.icsw.smartpill.Fragment.HomeFragment;
 import halla.icsw.smartpill.Fragment.NotificationFragment;
@@ -55,7 +61,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     private FirebaseDatabase mDatabase;
     private DatabaseReference mDataRef;
     private ArrayList<UserAlarm> arrayList;
-    AlarmManager alarm_manager;
+
+    static boolean alarmActive = false;
+    AlarmManager alarmManager;
+    Intent alarmIntent;
+    PendingIntent alarmPendingIntent, alarmCallPendingIntent, detectPendingIntent, dataPendingIntent;
+    NotificationManager alarmNotification, detectNotification, dataNotification;
+    String dateFormat="dd/MM/yyyy hh:mm:ss.SSS";
+    SimpleDateFormat formatter = new SimpleDateFormat(dateFormat);
+    Calendar alarmCalendar;
+    private float savedGram;
     DashboardFragment dashboardFragment;
     HomeFragment homeFragment;
     NotificationFragment notificationFragment;
@@ -88,44 +103,49 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
         arrayList = new ArrayList<>();
 
-        bottomNavigationView = findViewById(R.id.bottomNavigationView_main_menu);
-        bottomNavigationView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-        mDatabase = FirebaseDatabase.getInstance();
-        mDataRef = mDatabase.getReference("userData");
-//        bt = new BluetoothSPP(this);
-//        if (!bt.isBluetoothAvailable()) {
-//            Toast.makeText(this, "Bluetooth is not Available", Toast.LENGTH_SHORT).show();
-//            finish();
-//        }
-//
-//        bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {//데이터 수신
-//            @Override
-//            public void onDataReceived(byte[] data, String message) {
-//                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-//            }
-//        });
-//        bt.setBluetoothConnectionListener(new BluetoothSPP.BluetoothConnectionListener() {
-//            @Override
-//            public void onDeviceConnected(String name, String address) {//연결됬을때
-//                Toast.makeText(MainActivity.this, "Connected to" + name + "\n" + address, Toast.LENGTH_SHORT).show();
-//            }
-//
-//            @Override
-//            public void onDeviceDisconnected() {//연결해제
-//                Toast.makeText(MainActivity.this, "Connection lost", Toast.LENGTH_SHORT).show();
-//            }
-//
-//            @Override
-//            public void onDeviceConnectionFailed() {//연결실패
-//                Toast.makeText(MainActivity.this, "Unable to Connect", Toast.LENGTH_SHORT).show();
-//            }
-//        });
-
 
         homeFragment = new HomeFragment();
         dashboardFragment = new DashboardFragment();
         notificationFragment = new NotificationFragment();
+        bottomNavigationView = findViewById(R.id.bottomNavigationView_main_menu);
+        bottomNavigationView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        mDatabase = FirebaseDatabase.getInstance();
+        mDataRef = mDatabase.getReference("userData");
+        bt = new BluetoothSPP(this);
+        if (!bt.isBluetoothAvailable()) {
+            Toast.makeText(this, "Bluetooth is not Available", Toast.LENGTH_SHORT).show();
+            finish();
+        }
 
+        bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {//데이터 수신
+            @Override
+            public void onDataReceived(byte[] data, String message) {
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                float gram=Float.valueOf(message);
+                if(gram<savedGram){
+                  homeFragment.setBoolean();
+                }
+
+            }
+        });
+        bt.setBluetoothConnectionListener(new BluetoothSPP.BluetoothConnectionListener() {
+            @Override
+            public void onDeviceConnected(String name, String address) {//연결됬을때
+                Toast.makeText(MainActivity.this, "Connected to" + name + "\n" + address, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onDeviceDisconnected() {//연결해제
+                Toast.makeText(MainActivity.this, "Connection lost", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onDeviceConnectionFailed() {//연결실패
+                Toast.makeText(MainActivity.this, "Unable to Connect", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        connectPill();
         getSupportFragmentManager().beginTransaction().replace(R.id.frame_layout, homeFragment).commit();
 
         mFirebaseAuth = FirebaseAuth.getInstance();
@@ -170,67 +190,69 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         finish();
     }
 
-    //
-//    public void connectPill() {//연결시도
-//        if (bt.getServiceState() == BluetoothState.STATE_CONNECTED) {
-//            bt.disconnect();
-//        } else {
-//            Intent intent = new Intent(getApplicationContext(), DeviceList.class);
-//            startActivityForResult(intent, BluetoothState.REQUEST_CONNECT_DEVICE);
-//        }
-//
-//    }
-//
-//    @Override
-//    protected void onStart() {
-//        super.onStart();
-//        if (!bt.isBluetoothEnabled()) { //
-//            Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-//            startActivityForResult(intent, BluetoothState.REQUEST_ENABLE_BT);
-//        } else {
-//            if (!bt.isServiceAvailable()) {
-//                bt.setupService();
-//                bt.startService(BluetoothState.DEVICE_OTHER); //DEVICE_ANDROID는 안드로이드 기기 끼리
-//                setup();
-//            }
-//        }
-//
-//    }
-//
-//
-//    @Override
-//    protected void onDestroy() {
-//        super.onDestroy();
-//        bt.stopService();
-//    }
-//
-//    private void setup() {
-//        bt.send("Text", true);
-//    }
-//
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//        if (requestCode == BluetoothState.REQUEST_CONNECT_DEVICE) {
-//            if (resultCode == Activity.RESULT_OK)
-//                bt.connect(data);
-//        } else if (requestCode == BluetoothState.REQUEST_ENABLE_BT) {
-//            if (resultCode == Activity.RESULT_OK) {
-//                bt.setupService();
-//                bt.startService(BluetoothState.DEVICE_OTHER);
-//                setup();
-//            } else {
-//                Toast.makeText(getApplicationContext()
-//                        , "Bluetooth was not enabled."
-//                        , Toast.LENGTH_SHORT).show();
-//                finish();
-//            }
-//        }
-//
-//    }
+
+    public void connectPill() {//연결시도
+        if (bt.getServiceState() == BluetoothState.STATE_CONNECTED) {
+            bt.disconnect();
+        } else {
+            Intent intent = new Intent(getApplicationContext(), DeviceList.class);
+            startActivityForResult(intent, BluetoothState.REQUEST_CONNECT_DEVICE);
+        }
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (!bt.isBluetoothEnabled()) { //
+            Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(intent, BluetoothState.REQUEST_ENABLE_BT);
+        } else {
+            if (!bt.isServiceAvailable()) {
+                bt.setupService();
+                bt.startService(BluetoothState.DEVICE_OTHER); //DEVICE_ANDROID는 안드로이드 기기 끼리
+                setup();
+            }
+        }
+
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        bt.stopService();
+    }
+
+    public void setup() {
+        bt.send("t", true);
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == BluetoothState.REQUEST_CONNECT_DEVICE) {
+            if (resultCode == Activity.RESULT_OK)
+                bt.connect(data);
+        } else if (requestCode == BluetoothState.REQUEST_ENABLE_BT) {
+            if (resultCode == Activity.RESULT_OK) {
+                bt.setupService();
+                bt.startService(BluetoothState.DEVICE_OTHER);
+                setup();
+            } else {
+                Toast.makeText(getApplicationContext()
+                        , "Bluetooth was not enabled."
+                        , Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+
+    }
     public void loadUserAlarm() {
         Log.d("load","유저 데이터");
         mDataRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @RequiresApi(api = Build.VERSION_CODES.M)
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 //파이어베이스 데이터 베이스에 데이터를 받아오는 곳
@@ -246,9 +268,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                     Log.d("포문 진입","포문 진입");
                     UserAlarm user=arrayList.get(i);
                     String madicine = user.getMadicine();
-                    String[] hourMin = user.getClock().split(":");
-
-                    alarmSetting(user.getId()+i,madicine, hourMin[0], hourMin[1]);
+                    long times=user.getLongTime();
+                    Calendar calendar= Calendar.getInstance();
+                    calendar.setTimeInMillis(times);
+                    setAlarm(calendar);
                 }
 
             }
@@ -262,110 +285,33 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
     }
 
-    public void alarmSetting(String id,String madicine, String hour, String min) {
-        Log.d("알람 셋팅","알람 셋팅");
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    void setAlarm(Calendar calendar) {
+        Date date=calendar.getTime();
+        alarmCalendar = Calendar.getInstance();
+        alarmCalendar.setTimeInMillis(System.currentTimeMillis());
+        alarmCalendar.set(Calendar.HOUR_OF_DAY, date.getHours());
+        Log.d("알람", String.valueOf(date.getHours()));
+        alarmCalendar.set(Calendar.MINUTE, date.getMinutes());
+        Log.d("알람", String.valueOf(date.getMinutes()));
+        alarmCalendar.set(Calendar.SECOND, 0);
+        // TimePickerDialog 에서 설정한 시간을 알람 시간으로 설정
 
-        // 앞서 설정한 값으로 보여주기
-        // 없으면 디폴트 값은 현재시간
-        SharedPreferences sharedPreferences = getSharedPreferences(id, MODE_PRIVATE);
-        long millis = sharedPreferences.getLong(id+"nextNotifyTime", Calendar.getInstance().getTimeInMillis());
-
-        Calendar nextNotifyTime = new GregorianCalendar();
-        nextNotifyTime.setTimeInMillis(millis);
-
-        Date nextDate = nextNotifyTime.getTime();
-        String date_text = new SimpleDateFormat("yyyy년 MM월 dd일 EE요일 a hh시 mm분 ", Locale.getDefault()).format(nextDate);
-        Toast.makeText(getApplicationContext(), "[처음 실행시] 다음 알람은 " + date_text + "으로 알람이 설정되었습니다!", Toast.LENGTH_SHORT).show();
-
-
-        // 이전 설정값으로 TimePicker 초기화
-
-
-        int intHour, hour_24, minute;
-        String am_pm;
-        hour_24=Integer.parseInt(hour);
-
-        if (hour_24 > 12) {
-            am_pm = "PM";
-            intHour = hour_24 - 12;
-        } else {
-            intHour = hour_24;
-            am_pm = "AM";
-        }
-        minute=Integer.parseInt(min);
-
-        // 현재 지정된 시간으로 알람 시간 설정
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis());
-        calendar.set(Calendar.HOUR_OF_DAY, hour_24);
-        calendar.set(Calendar.MINUTE, minute);
-        calendar.set(Calendar.SECOND, 0);
-
-        // 이미 지난 시간을 지정했다면 다음날 같은 시간으로 설정
-        if (calendar.before(Calendar.getInstance())) {
-            calendar.add(Calendar.DATE, 1);
-        }
-
-        Date currentDateTime = calendar.getTime();
-        date_text = new SimpleDateFormat("yyyy년 MM월 dd일 EE요일 a hh시 mm분 ", Locale.getDefault()).format(currentDateTime);
-        Toast.makeText(getApplicationContext(), date_text + "으로 알람이 설정되었습니다!", Toast.LENGTH_SHORT).show();
-
-        //  Preference에 설정한 값 저장
-        SharedPreferences.Editor editor = getSharedPreferences(id, MODE_PRIVATE).edit();
-        editor.putLong(id+"nextNotifyTime", (long) calendar.getTimeInMillis());
-        editor.apply();
-
-
-        diaryNotification(calendar,madicine);
-
-    }
-
-
-    void diaryNotification(Calendar calendar,String madicine) {
-        Log.d("알람 기록","알람 기록!!!");
-//        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-//        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-//        Boolean dailyNotify = sharedPref.getBoolean(SettingsActivity.KEY_PREF_DAILY_NOTIFICATION, true);
-        Boolean dailyNotify = true; // 무조건 알람을 사용
-
-        PackageManager pm = this.getPackageManager();
-        ComponentName receiver = new ComponentName(this, DeviceBootReceiver.class);
-        Intent alarmIntent = new Intent(this, AlarmReceiver.class);
-        alarmIntent.putExtra("madicine",madicine);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, 0);
+        if (alarmCalendar.before(Calendar.getInstance())) alarmCalendar.add(Calendar.DATE, 1);
+        // 알람 시간이 현재시간보다 빠를 때 하루 뒤로 맞춤
+        Intent alarmIntent = new Intent(getApplicationContext(), AlarmReceiver.class);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-
-
-        // 사용자가 매일 알람을 허용했다면
-        if (dailyNotify) {
-
-
-            if (alarmManager != null) {
-
-                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
-                        AlarmManager.INTERVAL_DAY, pendingIntent);
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
-                }
-            }
-
-            // 부팅 후 실행되는 리시버 사용가능하게 설정
-            pm.setComponentEnabledSetting(receiver,
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                    PackageManager.DONT_KILL_APP);
-
-        }
-//        else { //Disable Daily Notifications
-//            if (PendingIntent.getBroadcast(this, 0, alarmIntent, 0) != null && alarmManager != null) {
-//                alarmManager.cancel(pendingIntent);
-//                //Toast.makeText(this,"Notifications were disabled",Toast.LENGTH_SHORT).show();
-//            }
-//            pm.setComponentEnabledSetting(receiver,
-//                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-//                    PackageManager.DONT_KILL_APP);
-//        }
-    }
+        alarmIntent.setAction(AlarmReceiver.ACTION_RESTART_SERVICE);
+        PendingIntent alarmCallPendingIntent
+                = PendingIntent.getBroadcast
+                (MainActivity.this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            alarmManager.setExactAndAllowWhileIdle
+                    (AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), alarmCallPendingIntent);
+        else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+            alarmManager.setExact
+                    (AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), alarmCallPendingIntent);
+    } // 알람 설정
 
 
 }
