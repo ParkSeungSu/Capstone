@@ -37,6 +37,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -61,12 +62,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     private FirebaseDatabase mDatabase;
     private DatabaseReference mDataRef;
     private ArrayList<UserAlarm> arrayList;
+    private ArrayList<String> datePillDate;
+    private ArrayList<Integer> datePillNum;
+    static private String SHARE_NAME="SHARE_PREF";
+    static SharedPreferences sharedPref = null;
+    static SharedPreferences.Editor editor=null;
 
-    static boolean alarmActive = false;
-    AlarmManager alarmManager;
-    Intent alarmIntent;
-    PendingIntent alarmPendingIntent, alarmCallPendingIntent, detectPendingIntent, dataPendingIntent;
-    NotificationManager alarmNotification, detectNotification, dataNotification;
     String dateFormat="dd/MM/yyyy hh:mm:ss.SSS";
     SimpleDateFormat formatter = new SimpleDateFormat(dateFormat);
     Calendar alarmCalendar;
@@ -100,10 +101,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        //SharedPrefrence 값 불러오기
+        sharedPref=getSharedPreferences(SHARE_NAME,MODE_PRIVATE);
+        editor=sharedPref.edit();
+        savedGram=sharedPref.getFloat("gram",-1);
+        datePillDate=new ArrayList<>();
+        datePillNum=new ArrayList<>();
         arrayList = new ArrayList<>();
-
-
         homeFragment = new HomeFragment();
         dashboardFragment = new DashboardFragment();
         notificationFragment = new NotificationFragment();
@@ -120,10 +124,19 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {//데이터 수신
             @Override
             public void onDataReceived(byte[] data, String message) {
+                Log.d("브루투스","부루투스");
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                 float gram=Float.valueOf(message);
-                if(gram<savedGram){
+                if(savedGram<=-1){
+                    savedGram=gram;
+                    Toast.makeText(MainActivity.this, "무게 설정후 복용확인!", Toast.LENGTH_SHORT).show();
+                }
+                else if(gram<savedGram){
                   homeFragment.setBoolean();
+                  savedGram=gram;
+                  editor.putFloat("gram",savedGram);
+                  editor.commit();
+                    Toast.makeText(MainActivity.this, "복용 확인!", Toast.LENGTH_SHORT).show();
                 }
 
             }
@@ -271,7 +284,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                     long times=user.getLongTime();
                     Calendar calendar= Calendar.getInstance();
                     calendar.setTimeInMillis(times);
-                    setAlarm(calendar);
+                    setAlarm(calendar,i);
                 }
 
             }
@@ -286,7 +299,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
-    void setAlarm(Calendar calendar) {
+    void setAlarm(Calendar calendar,int i) {
         Date date=calendar.getTime();
         alarmCalendar = Calendar.getInstance();
         alarmCalendar.setTimeInMillis(System.currentTimeMillis());
@@ -304,7 +317,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         alarmIntent.setAction(AlarmReceiver.ACTION_RESTART_SERVICE);
         PendingIntent alarmCallPendingIntent
                 = PendingIntent.getBroadcast
-                (MainActivity.this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                (MainActivity.this, i, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
             alarmManager.setExactAndAllowWhileIdle
                     (AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), alarmCallPendingIntent);
@@ -312,6 +325,38 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             alarmManager.setExact
                     (AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), alarmCallPendingIntent);
     } // 알람 설정
+    public void getNumsOfUser(){
+        mDataRef = mDatabase.getReference(FirebaseAuth.getInstance().getCurrentUser().getUid());
+        mDataRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                datePillDate.clear();//기존 배열 초기화
+                datePillNum.clear();
+                for(DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    DatePill datePill=snapshot.getValue(DatePill.class);
+                    datePillDate.add(datePill.getDate());
+                    datePillNum.add(datePill.getNum());
+                    Log.d("main pill",datePill.getDate());
 
+                }
+                Intent intent=new Intent(MainActivity.this,BarChartActivity.class);
+                intent.putStringArrayListExtra("Date",datePillDate);
+                intent.putIntegerArrayListExtra("Num",datePillNum);
+
+                startActivity(intent);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+    public void resetWeight(){
+        savedGram=-1;
+        editor.putFloat("gram",savedGram);
+        editor.commit();
+    }
 
 }

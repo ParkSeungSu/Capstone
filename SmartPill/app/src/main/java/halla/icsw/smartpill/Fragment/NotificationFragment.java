@@ -18,8 +18,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import halla.icsw.smartpill.R;
@@ -45,6 +48,8 @@ public class NotificationFragment extends Fragment {
         mDatabase=FirebaseDatabase.getInstance();
         mDataRef=mDatabase.getReference();
         childUpdates=new HashMap<>();
+
+
 
         addPillButton.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.M)
